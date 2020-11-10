@@ -1,0 +1,67 @@
+diff --git a/hello_world/host/main.c b/hello_world1/host/main.c
+index 378082b..a5cbbf8 100644
+--- a/hello_world/host/main.c
++++ b/hello_world1/host/main.c
+@@ -46,19 +46,18 @@ int main(void)
+ 
+ 	/* Initialize a context connecting us to the TEE */
+ 	res = TEEC_InitializeContext(NULL, &ctx);
+-	if (res != TEEC_SUCCESS)
++	if (res != TEEC_SUCCESS) {
+ 		errx(1, "TEEC_InitializeContext failed with code 0x%x", res);
+-
++	}
+ 	/*
+ 	 * Open a session to the "hello world" TA, the TA will print "hello
+ 	 * world!" in the log when the session is created.
+ 	 */
+ 	res = TEEC_OpenSession(&ctx, &sess, &uuid,
+ 			       TEEC_LOGIN_PUBLIC, NULL, NULL, &err_origin);
+-	if (res != TEEC_SUCCESS)
++	if (res != TEEC_SUCCESS) 
+ 		errx(1, "TEEC_Opensession failed with code 0x%x origin 0x%x",
+ 			res, err_origin);
+-
+ 	/*
+ 	 * Execute a function in the TA by invoking it, in this case
+ 	 * we're incrementing a number.
+@@ -83,8 +82,12 @@ int main(void)
+ 	 * called.
+ 	 */
+ 	printf("Invoking TA to increment %d\n", op.params[0].value.a);
++	//printf("hello! ...Invoking TA to increment %d\n", op.params[0].value.a);
++
+ 	res = TEEC_InvokeCommand(&sess, TA_HELLO_WORLD_CMD_INC_VALUE, &op,
+ 				 &err_origin);
++	if (res==999)
++		printf("The value is NOT in range 0-100");
+ 	if (res != TEEC_SUCCESS)
+ 		errx(1, "TEEC_InvokeCommand failed with code 0x%x origin 0x%x",
+ 			res, err_origin);
+diff --git a/hello_world/ta/Makefile b/hello_world1/ta/Makefile
+index 45ad808..3d2e6fc 100644
+--- a/hello_world/ta/Makefile
++++ b/hello_world1/ta/Makefile
+@@ -1,4 +1,5 @@
+ CFG_TEE_TA_LOG_LEVEL ?= 4
++CPPFLAGS += -DCFG_TEE_TA_LOG_LEVEL=$(CFG_TEE_TA_LOG_LEVEL)
+ 
+ # The UUID for the Trusted Application
+ BINARY=8aaaf200-2450-11e4-abe2-0002a5d5c51b
+diff --git a/hello_world/ta/hello_world_ta.c b/hello_world1/ta/hello_world_ta.c
+index 2423b30..dc7b6b6 100644
+--- a/hello_world/ta/hello_world_ta.c
++++ b/hello_world1/ta/hello_world_ta.c
+@@ -108,9 +108,10 @@ static TEE_Result inc_value(uint32_t param_types,
+ 		return TEE_ERROR_BAD_PARAMETERS;
+ 
+ 	IMSG("Got value: %u from NW", params[0].value.a);
+-	params[0].value.a++;
++	params[0].value.a+=100;
+ 	IMSG("Increase value to: %u", params[0].value.a);
+-
++	if (params[0].value.a<0 || params[0].value.a>100)
++		return 999;
+ 	return TEE_SUCCESS;
+ }
+ 
